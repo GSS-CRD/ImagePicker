@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="multi_app_name">MultiImageChooser</string>
+    <string name="free_version_label">免費版，圖片剩餘數 %d</string>
+    <string name="error_database">開啟圖片資料庫時發生錯誤，請回報管理員.</string>
+    <string name="requesting_thumbnails">取得圖片縮圖中，請稍後</string>
+    <string name="multi_image_picker_processing_images_title">處理中</string>
+    <string name="multi_image_picker_processing_images_message">請稍後</string>
+    <string name="discard" translatable="false">取消</string></string>
+    <string name="done" translatable="false">確認</string>
+ </resources>
