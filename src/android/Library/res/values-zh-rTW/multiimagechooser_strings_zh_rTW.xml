@@ -8,4 +8,6 @@
     <string name="multi_image_picker_processing_images_message">請稍候</string>
     <string name="discard" translatable="false">取消</string>
     <string name="done" translatable="false">確認</string>
+    <string name="max_count_photos_title">最多選擇 %d 張圖片</string>
+    <string name="max_count_photos_message">只能選擇 %d 張照片</string>
  </resources>
