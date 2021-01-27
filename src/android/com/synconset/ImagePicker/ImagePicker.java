@@ -22,6 +22,8 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 
+import com.terikon.cordova.photolibrary.PhotoLibraryService;
+
 public class ImagePicker extends CordovaPlugin {
 
     private static final String ACTION_GET_PICTURES = "getPictures";
@@ -35,7 +37,6 @@ public class ImagePicker extends CordovaPlugin {
     /**
      * Temporarily store the imagePickerIntent when asking for read permission
      */
-    private Intent startAfterPermissionResult = null;
 
     public boolean execute(String action, final JSONArray args, final CallbackContext callbackContext) throws JSONException {
         this.callbackContext = callbackContext;
@@ -46,7 +47,9 @@ public class ImagePicker extends CordovaPlugin {
 
         } else if (ACTION_REQUEST_READ_PERMISSION.equals(action)) {
             if (!hasReadPermission()) {
-                requestReadPermission(null);
+                requestReadPermission();
+            } else {
+              callbackContext.success();
             }
             return true;
 
@@ -98,7 +101,7 @@ public class ImagePicker extends CordovaPlugin {
             if (hasReadPermission()) {
                 cordova.startActivityForResult(this, imagePickerIntent, 0);
             } else {
-                requestReadPermission(imagePickerIntent);
+                requestReadPermission();
                 // The downside is the user needs to re-invoke this picker method.
                 // The best thing to do for the dev is check 'hasReadPermission' manually and
                 // run 'requestReadPermission' or 'getPictures' based on the outcome.
@@ -113,29 +116,19 @@ public class ImagePicker extends CordovaPlugin {
      */
     @SuppressLint("InlinedApi")
     private boolean hasReadPermission() {
-        return Build.VERSION.SDK_INT < 23 ||
-            PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(this.cordova.getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE);
+        return cordova.hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE);
     }
 
-    /**
-     * Request READ_EXTERNAL_STORAGE permission
-     *
-     * @param intent: Launch this after receiving the permission
-     */
     @SuppressLint("InlinedApi")
-    private void requestReadPermission(Intent intent) {
-        startAfterPermissionResult = intent;
-        ActivityCompat.requestPermissions(
-                this.cordova.getActivity(),
-                new String[] {Manifest.permission.READ_EXTERNAL_STORAGE},
-                PERMISSION_REQUEST_CODE);
+    private void requestReadPermission() {
+        cordova.requestPermission(this, PERMISSION_REQUEST_CODE, Manifest.permission.READ_EXTERNAL_STORAGE);
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK && data != null) {
             int sync = data.getIntExtra("bigdata:synccode", -1);
             final Bundle bigData = ResultIPC.get().getLargeData(sync);
-      
+
             ArrayList<String> fileNames = bigData.getStringArrayList("MULTIPLEFILENAMES");
             JSONArray res = new JSONArray(fileNames);
             callbackContext.success(res);
@@ -165,16 +158,17 @@ public class ImagePicker extends CordovaPlugin {
     }
 
 
-    public void onRequestPermissionResult(int requestCode, String permissions[], int[] grantResults) {
-        if (hasReadPermission()) {
-            if (startAfterPermissionResult != null) {
-                cordova.startActivityForResult(this, startAfterPermissionResult, 0);
-                startAfterPermissionResult = null;
-            } else {
-                callbackContext.success();
-            }
-        } else {
-            callbackContext.error("Permission denied");
+    @Override
+    public void onRequestPermissionResult(int requestCode, String permissions[], int[] grantResults) throws JSONException {
+      super.onRequestPermissionResult(requestCode, permissions, grantResults);
+
+      for (int r : grantResults) {
+        if (r == PackageManager.PERMISSION_DENIED) {
+          this.callbackContext.error("Permission denied");
+          return;
         }
+      }
+
+      callbackContext.success();
     }
 }
